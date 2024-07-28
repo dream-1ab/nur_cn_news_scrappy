@@ -1,0 +1,15 @@
+{
+  "url": "https://nur.cn/news/2020/09/10680403.shtml",
+  "unique_key": "https://nur.cn/news/2020/09/10680403.shtml",
+  "method": "get",
+  "payload": null,
+  "headers": {},
+  "user_data": {},
+  "retry_count": 4,
+  "no_retry": false,
+  "loaded_url": null,
+  "handled_at": null,
+  "id": "qrnHdIqfheHpC9d",
+  "json_": "{\n  \"url\": \"https://nur.cn/news/2020/09/10680403.shtml\",\n  \"unique_key\": \"https://nur.cn/news/2020/09/10680403.shtml\",\n  \"method\": \"get\",\n  \"payload\": null,\n  \"headers\": {},\n  \"user_data\": {\n    \"label\": \"News\",\n    \"news_object\": {\n      \"id\": \"10680403\",\n      \"title\": \"ﺋﯩﭽﻜﯩﺮﯨﺪﯨﻜﻰ ﺋﯩﺸﻪﻧﭽﯩﻠﯩﻚ، ﺗﻮﭖ ﺑﺎﮪﺎﺩﯨﻜﻰ ﻧﯩﻤﻜﻪﺵ ﻣﺎﺷﯩﻨﯩﻼﺭ ﺋﯘﭼﯘﺭﻯ\",\n      \"thumb\": [\n        \"https://cdnf.nur.cn/uploadfile/2020/0927/2020092722305851475.jpgthumb_210_150.jpg\"\n      ],\n      \"date_txt\": \"3 ﻳﯩﻞ ﺋﯩﻠﮕﯩﺮﻯ\",\n      \"bahanum\": \"0\",\n      \"copyfrom\": \"ئۈندىدار سالونى\",\n      \"type\": \"news\",\n      \"url\": \"/news/2020/09/10680403.shtml\",\n      \"crawled\": false\n    },\n    \"__crawlee\": {\n      \"state\": \"RequestState.ERROR_HANDLER\"\n    }\n  },\n  \"retry_count\": 4,\n  \"no_retry\": false,\n  \"loaded_url\": \"https://nur.cn/index.shtml\",\n  \"handled_at\": \"2024-07-27 05:43:04.726788+00:00\",\n  \"id\": \"qrnHdIqfheHpC9d\",\n  \"json_\": null,\n  \"order_no\": null\n}",
+  "order_no": null
+}
