@@ -4,9 +4,9 @@
 
 it is uyghur people news website located in China, if you want bunch of Uyghur text datasets to train your machine learning program you can use this tool to collect a lot of text datasets from this news website.
 
-[image](./Screenshot_20240725_161417.png)
+![image](./Screenshot_20240725_161417.png)
 
-[image](./Screenshot_20240726_150803.png)
+![image](./Screenshot_20240726_150803.png)
 
 ### Features
 - supports break point continuation
