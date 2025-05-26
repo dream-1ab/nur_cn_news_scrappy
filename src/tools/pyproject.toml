@@ -1,14 +1,12 @@
 [project]
-name = "nur-cn-crawler"
+name = "nur-cn"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "bs4>=0.0.2",
-    "crawlee[full]==0.4.5",
+    "beautifulsoup4>=4.13.4",
     "ipykernel>=6.29.5",
-    "lxml>=5.4.0",
     "plyvel>=1.5.1",
-    "tqdm>=4.67.1",
+    "pydantic>=2.11.4",
 ]
