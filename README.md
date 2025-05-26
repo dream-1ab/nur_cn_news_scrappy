@@ -16,8 +16,8 @@ it is uyghur people news website located in China, if you want bunch of Uyghur t
 ### How to use?
 
 1. clone this project
-2. install crawlee through `pip install 'crawlee[beautifulsoup]'`
-3. run program.py file for example: `python3 ./program.py`
+2. install crawlee through `uv sync`
+3. run program.py file for example: `uv run ./src/program.py`
 
 ### what if I want to run some stage of this program?
 

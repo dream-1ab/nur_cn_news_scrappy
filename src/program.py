@@ -1,20 +1,18 @@
 import asyncio
 
-import crawlee.autoscaling
-import crawlee.basic_crawler
+# import crawlee.autoscaling
 import crawlee.beautifulsoup_crawler
 from crawlee.beautifulsoup_crawler import BeautifulSoupCrawler, BeautifulSoupCrawlingContext
 import crawlee
-import crawlee.models
 import crawlee.storages
 import bs4
-import crawlee.types
 import plyvel
 import typing
 import json
 import requests
 import pydantic
 import time
+import traceback
 
 class NewsItem(pydantic.BaseModel):
     # "id": "26829137",
@@ -70,6 +68,9 @@ news_category_db = Storage("./data/news_category.lvdb")
 news_list_db = Storage("./data/news_list.lvdb")
 news_contents_db = Storage("./data/news_content.lvdb")
 
+import warnings
+warnings.filterwarnings("error", category=UserWarning, module="pydantic")
+
 async def main(craw_news_category: bool, clean_redundant_category, craw_news_list_from_each_category: bool, craw_news_content: bool) -> None:
     # crawler = PlaywrightCrawler(
     #     browser_type="chromium",
@@ -79,7 +80,7 @@ async def main(craw_news_category: bool, clean_redundant_category, craw_news_lis
     # )
 
     crawler = BeautifulSoupCrawler(
-        concurrency_settings=crawlee.autoscaling.ConcurrencySettings(max_concurrency=3, max_tasks_per_minute=60 * 3),
+        concurrency_settings=crawlee.ConcurrencySettings(max_concurrency=3, max_tasks_per_minute=60 * 3),
         use_session_pool=True,
         max_request_retries=5,
         max_requests_per_crawl=10000,
@@ -89,48 +90,53 @@ async def main(craw_news_category: bool, clean_redundant_category, craw_news_lis
 
     @crawler.router.handler("News")
     async def handle_news_response(context: BeautifulSoupCrawlingContext):
-        context.log.info(f"processing {context.request.url} ...")
+        # print("*************************************")
+        try:
+            context.log.info(f"processing {context.request.url} ...")
 
-        title, content = context.soup.select_one(".tt"), context.soup.select_one(".mazmun")
-        
-        # if title is not None and content is not None:
-        data = {
-            "title": title.text,
-            "url": context.request.url,
-            "full_page_content": content.decode_contents()
-        }
+            title, content = context.soup.select_one(".tt"), context.soup.select_one(".mazmun")
+            
+            # if title is not None and content is not None:
+            data = {
+                "title": title.text,
+                "url": context.request.url,
+                "full_page_content": content.decode_contents()
+            }
 
-        top_view = context.soup.select_one(".view-top")
-        top_view_children = [i for i in list(top_view.children) if i != "\n"]
-        top_view_children: list[bs4.element.Tag]
+            top_view = context.soup.select_one(".view-top")
+            top_view_children = [i for i in list(top_view.children) if i != "\n"]
+            top_view_children: list[bs4.element.Tag]
 
-        data["comes_from"] = list(top_view_children[0].children)[1].text
-        data["published_time"] = list(top_view_children[1].children)[1].text
-        data["comment_count"] = int(list(top_view_children[2].children)[0].text.replace(" ", ""))
+            data["comes_from"] = list(top_view_children[0].children)[1].text
+            data["published_time"] = list(top_view_children[1].children)[1].text
+            data["comment_count"] = int(list(top_view_children[2].children)[0].text.replace(" ", ""))
 
-        bottom_view = context.soup.select_one(".view-bottom .v1")
-        bottom_view_children = [list(i.children) for i in list(bottom_view.children)[1:] if i != "\n"]
-        bottom_view_children = [i[1] for i in bottom_view_children]
+            bottom_view = context.soup.select_one(".view-bottom .v1")
+            bottom_view_children = [list(i.children) for i in list(bottom_view.children)[1:] if i != "\n"]
+            bottom_view_children = [i[1] for i in bottom_view_children]
 
-        data["tags"] = [i.text for i in bottom_view_children]
+            data["tags"] = [i.text for i in bottom_view_children]
 
-        related_1 = context.soup.select(".related-left ul li a")
-        related_2 = context.soup.select(".view1 #news_list_item .list-li1 a")
-        related = [*related_1, *related_2]
-        related = [{"url": i.attrs["href"], "html_content": i.decode(), "title": i.find("h4").text} for i in related]
-        data["related"] = related
+            related_1 = context.soup.select(".related-left ul li a")
+            related_2 = context.soup.select(".view1 #news_list_item .list-li1 a")
+            related = [*related_1, *related_2]
+            related = [{"url": i.attrs["href"], "html_content": i.decode(), "title": i.find("h4").text} for i in related]
+            data["related"] = related
 
-        
-        model = NewsContent.model_validate(data)
-        news_contents_db.put(model.url, model.model_dump_json())
-        news_item = context.request.user_data["news_object"]
-        news_item = news_item if type(news_item) is NewsItem else NewsItem.model_validate(news_item)
-        news_item: NewsItem
-        news_item.crawled = True
-        news_list_db.put(news_item.url, news_item.model_dump_json())
-        await context.push_data(data=model.model_dump())
-        # await context.enqueue_links(include=[crawlee.Glob("https://nur.cn/*")])
-        await asyncio.sleep(0.3)
+            
+            model = NewsContent.model_validate(data)
+            news_contents_db.put(model.url, model.model_dump_json())
+            news_item = context.request.user_data["news_object"]
+            news_item = news_item if type(news_item) is NewsItem else NewsItem.model_validate(news_item)
+            news_item: NewsItem
+            news_item.crawled = True
+            news_list_db.put(news_item.url, news_item.model_dump_json())
+            await context.push_data(data=model.model_dump())
+            # await context.enqueue_links(include=[crawlee.Glob("https://nur.cn/*")])
+            await asyncio.sleep(0.3)
+        except Exception as e:
+            traceback.print_exc()
+            print(f"{e}")
 
     @crawler.router.handler("NewsList")
     async def handle_lists(context: BeautifulSoupCrawlingContext):
@@ -157,9 +163,9 @@ async def main(craw_news_category: bool, clean_redundant_category, craw_news_lis
         await asyncio.sleep(0.3)
 
     if craw_news_category:
-        for i in range(300):
+        for i in range(600):
             url = f"https://nur.cn/lists/{i}/1.shtml"
-            request = crawlee.models.Request.from_url(url=url, label="NewsList")
+            request = crawlee.Request.from_url(url=url, label="NewsList")
             request.user_data["index"] = i
             await crawler.run([request])
             print(i)
@@ -267,12 +273,17 @@ async def main(craw_news_category: bool, clean_redundant_category, craw_news_lis
                 i.crawled = False
                 news_list_db.put(i.url, i.model_dump_json())
         news_list = [i for i in news_list if i.crawled == False]
+        # for ni in news_list:
+        #     try:
+        #         temp = ni.model_dump_json()
+        #     except Exception as e:
+        #         print(e)
         chunks = slice_list_into_chunks(news_list, chunck_size)
         for i, chunk in enumerate(chunks):
-            requests: list[crawlee.models.Request] = []
+            requests: list[crawlee.Request] = []
             for item in chunk:
-                request = crawlee.models.Request.from_url(f"https://nur.cn{item.url}", label="News")
-                request.user_data["news_object"] = item
+                request = crawlee.Request.from_url(f"https://nur.cn{item.url}", label="News")
+                request.user_data["news_object"] = item.model_dump()
                 requests.append(request)
             await crawler.run(requests=requests)
 
