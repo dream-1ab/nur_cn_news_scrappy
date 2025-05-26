@@ -165,3 +165,4 @@ data
 venv
 uv.lock
 storage
+extracted

@@ -13,6 +13,7 @@ import requests
 import pydantic
 import time
 import traceback
+from tqdm import tqdm
 
 class NewsItem(pydantic.BaseModel):
     # "id": "26829137",
@@ -26,11 +27,11 @@ class NewsItem(pydantic.BaseModel):
 
     id: str
     title: str
-    thumb: list | None
-    date_txt: str | None
-    bahanum: str | None
-    copyfrom: str | None
-    type: str | None
+    thumb: list | None = None
+    date_txt: str | None = None
+    bahanum: str | None = None
+    copyfrom: str | None = None
+    type: str | None = None
     url: str
     crawled: bool
 
@@ -273,11 +274,6 @@ async def main(craw_news_category: bool, clean_redundant_category, craw_news_lis
                 i.crawled = False
                 news_list_db.put(i.url, i.model_dump_json())
         news_list = [i for i in news_list if i.crawled == False]
-        # for ni in news_list:
-        #     try:
-        #         temp = ni.model_dump_json()
-        #     except Exception as e:
-        #         print(e)
         chunks = slice_list_into_chunks(news_list, chunck_size)
         for i, chunk in enumerate(chunks):
             requests: list[crawlee.Request] = []
@@ -289,15 +285,36 @@ async def main(craw_news_category: bool, clean_redundant_category, craw_news_lis
 
             (total_count, completed_count) = (total_count, (total_count - len(news_list) + ((i + 1) * chunck_size)))
             print(f"*** [{((completed_count / total_count) * 100.0):.3f}%] {completed_count}/{total_count} news are crawed!\n\n")
+    
+    def add_related_news_to_crawle_list():
+        count = 0
+        news_contents: list[NewsContent] = [NewsContent.model_validate_json(v.decode()) for k, v in news_contents_db.db]
+        urls: set[str] = set([x.url for x in news_contents])
+        for v in tqdm(news_contents, desc="scanning related news..."):
+            for r in v.related:
+                url = f"https://nur.cn{r.url}"
+                if url not in urls:
+                    urls.add(url)
+                    item = NewsItem(id=r.url.split("/")[-1].split(".")[0], title=r.title, url=r.url, crawled=False, bahanum=None, copyfrom=None, date_txt=None, thumb=None, type=None)
+                    news_list_db.put(url, item.model_dump_json())
+                    count += 1
+        print(f"{count} related news are added. all the news items are: {len(urls)}")
+        return count > 0
+        
         
     if craw_news_content:
-        await crawle_news_from_news_list(continue_from_break_point=True, chunck_size=64)
+        while True:
+            await crawle_news_from_news_list(continue_from_break_point=True, chunck_size=64)
+            print("[OK] of crawle news content.")
+            list_is_updated = add_related_news_to_crawle_list()
+            if not list_is_updated:
+                break
     print("Over!")
 
 if __name__ == "__main__":
     asyncio.run(main(
-        craw_news_category=True,
-        clean_redundant_category=True,
-        craw_news_list_from_each_category=True,
+        craw_news_category=False,
+        clean_redundant_category=False,
+        craw_news_list_from_each_category=False,
         craw_news_content=True
     ))
