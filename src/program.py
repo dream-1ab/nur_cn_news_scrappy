@@ -81,10 +81,11 @@ async def main(craw_news_category: bool, clean_redundant_category, craw_news_lis
     # )
 
     crawler = BeautifulSoupCrawler(
-        concurrency_settings=crawlee.ConcurrencySettings(max_concurrency=3, max_tasks_per_minute=60 * 3),
+        concurrency_settings=crawlee.ConcurrencySettings(max_concurrency=100, max_tasks_per_minute=60 * 10, desired_concurrency=10),
         use_session_pool=True,
         max_request_retries=5,
         max_requests_per_crawl=10000,
+        
     )
 
     crawle_news_category_storage = await crawlee.storages.Dataset.open(name="news_Category")
@@ -134,7 +135,7 @@ async def main(craw_news_category: bool, clean_redundant_category, craw_news_lis
             news_list_db.put(news_item.url, news_item.model_dump_json())
             await context.push_data(data=model.model_dump())
             # await context.enqueue_links(include=[crawlee.Glob("https://nur.cn/*")])
-            await asyncio.sleep(0.3)
+            # await asyncio.sleep(0.3)
         except Exception as e:
             traceback.print_exc()
             print(f"{e}")
@@ -289,26 +290,22 @@ async def main(craw_news_category: bool, clean_redundant_category, craw_news_lis
     def add_related_news_to_crawle_list():
         count = 0
         news_contents: list[NewsContent] = [NewsContent.model_validate_json(v.decode()) for k, v in news_contents_db.db]
-        urls: set[str] = set([x.url for x in news_contents])
+        urls: set[str] = set([k.decode() for k, v in news_list_db.db])
         for v in tqdm(news_contents, desc="scanning related news..."):
             for r in v.related:
-                url = f"https://nur.cn{r.url}"
-                if url not in urls:
-                    urls.add(url)
+                if r.url not in urls:
+                    urls.add(r.url)
                     item = NewsItem(id=r.url.split("/")[-1].split(".")[0], title=r.title, url=r.url, crawled=False, bahanum=None, copyfrom=None, date_txt=None, thumb=None, type=None)
-                    news_list_db.put(url, item.model_dump_json())
+                    news_list_db.put(r.url, item.model_dump_json())
                     count += 1
         print(f"{count} related news are added. all the news items are: {len(urls)}")
         return count > 0
         
         
     if craw_news_content:
-        while True:
-            await crawle_news_from_news_list(continue_from_break_point=True, chunck_size=64)
-            print("[OK] of crawle news content.")
-            list_is_updated = add_related_news_to_crawle_list()
-            if not list_is_updated:
-                break
+        await crawle_news_from_news_list(continue_from_break_point=True, chunck_size=64)
+        print("[OK] of crawle news content.")
+        add_related_news_to_crawle_list()
     print("Over!")
 
 if __name__ == "__main__":

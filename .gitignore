@@ -166,3 +166,4 @@ venv
 uv.lock
 storage
 extracted
+storage2
