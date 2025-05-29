@@ -13,7 +13,7 @@ uyghur_symbols = {
     "ئ"
   ],
   "تىنىش_بەلگىلىرى": [
-    "۔", "،", "؟", "!", "-", "«", "»", "؛", ":", "'", "\"", "]", "[", " ", "›", "‹"
+    "۔", "،", "؟", "!", "-", "«", "»", "؛", ":", "'", "\"", "]", "[", " ", "›", "‹", "(", ")", "<", ">", "{", "}", "*", "+", "_", "=", ".", ","
   ],
   "سانلار": [
     "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
@@ -121,12 +121,19 @@ def collapse_spaces(text: str) -> str:
 def lower_text(text: str) -> str:
    return text.lower()
 
+def clean_nur_website_specific_words(text: str) -> str:
+  if text.find("نۇر تورى") > -1:
+    return ""
+  return text
+
 def clean_text(text: str) -> str:
-   text = clean_rare_symbols(text)
-   text = clean_extended_uyghur_characters(text)
-   text = clean_chinese_text(text)
-   text = clean_unknown_symbols(text)
-   text = clean_http_links(text)
-   text = collapse_spaces(text)
-   text = lower_text(text)
-   return text
+  text = clean_rare_symbols(text)
+  text = clean_extended_uyghur_characters(text)
+  #  text = clean_chinese_text(text)
+  #  text = clean_unknown_symbols(text)
+  text = clean_http_links(text)
+  text = collapse_spaces(text)
+  #  text = lower_text(text)
+  text = clean_nur_website_specific_words(text)
+  
+  return text
